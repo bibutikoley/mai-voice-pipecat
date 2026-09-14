@@ -9,9 +9,23 @@ from mai_voice.providers import registry
 
 
 def test_registry_contains_expected_providers():
-    assert set(registry.STT_PROVIDERS) == {"moonshine", "whisper", "qwen", "deepgram", "mlx"}
-    assert set(registry.TTS_PROVIDERS) == {"kokoro", "piper", "qwen", "cartesia", "mlx"}
-    assert set(registry.LLM_PROVIDERS) == {"stub", "openai_compatible"}
+    assert set(registry.STT_PROVIDERS) == {
+        "moonshine",
+        "whisper",
+        "qwen",
+        "deepgram",
+        "mlx",
+        "sarvam",
+    }
+    assert set(registry.TTS_PROVIDERS) == {
+        "kokoro",
+        "piper",
+        "qwen",
+        "cartesia",
+        "mlx",
+        "sarvam",
+    }
+    assert set(registry.LLM_PROVIDERS) == {"stub", "openai_compatible", "sarvam"}
 
 
 def test_unknown_provider_lists_alternatives():

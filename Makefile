@@ -1,18 +1,22 @@
 COMPOSE ?= docker compose
 EXTRAS ?=
 
-.PHONY: help build up down restart logs ps models test lint lock shell clean audio-server
+.PHONY: help build up down restart logs ps models test lint lock shell clean stt-server tts-server stt-stop tts-stop
 
 help:
 	@echo "mai-voice"
 	@echo ""
-	@echo "  make build       Build the backend image"
-	@echo "  make up          Build and start the server (port 7860)"
-	@echo "  make down        Stop and remove containers"
-	@echo "  make restart     Recreate the server (applies backend/.env changes)"
-	@echo "  make logs        Follow server logs"
-	@echo "  make models      Warm local model caches (Moonshine/Kokoro)"
-	@echo "  make audio-server  Run MLX STT/TTS natively on the Mac (127.0.0.1:8000)"
+	@echo "  make stt-server  Start the MLX STT server on the Mac (127.0.0.1:8001)"
+	@echo "  make tts-server  Start the MLX TTS server on the Mac (127.0.0.1:8002)"
+	@echo "  make up          Build and start the Docker Pipecat server (:7860)"
+	@echo ""
+	@echo "  make stt-stop    Stop the STT server"
+	@echo "  make tts-stop    Stop the TTS server"
+	@echo "  make down        Stop and remove the Docker server"
+	@echo "  make restart     Recreate the Docker server (applies backend/.env changes)"
+	@echo "  make logs        Follow Docker server logs"
+	@echo "  make ps          Show Docker container status"
+	@echo "  make models      Warm in-container caches (Moonshine/Kokoro)"
 	@echo "  make test        Run backend unit tests (host uv)"
 	@echo "  make lint        Run ruff (host uv)"
 	@echo "  make lock        Refresh backend/uv.lock"
@@ -23,8 +27,19 @@ help:
 	@echo "  Server:  http://localhost:7860        (browser client at /client)"
 	@echo "  Health:  http://localhost:7860/status"
 
-audio-server:
-	uvx --prerelease=allow --from "mlx-audio[server]" mlx_audio.server --host 127.0.0.1 --port 8000
+# --- Apple Silicon audio servers (independent; restart either without touching the others)
+
+stt-server:
+	uvx --prerelease=allow --from "mlx-audio[server]" mlx_audio.server --host 127.0.0.1 --port 8001
+
+tts-server:
+	uvx --prerelease=allow --from "mlx-audio[server]" mlx_audio.server --host 127.0.0.1 --port 8002
+
+stt-stop:
+	-pkill -f "mlx_audio.server.*--port 8001"
+
+tts-stop:
+	-pkill -f "mlx_audio.server.*--port 8002"
 
 build:
 	$(COMPOSE) build backend

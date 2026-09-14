@@ -119,7 +119,7 @@ def create(settings: Settings) -> MlxTTSService:
     from mai_voice.processors.text_filters import build_text_filters
 
     return MlxTTSService(
-        base_url=settings.mlx_audio_base_url,
+        base_url=settings.mlx_tts_base_url,
         model=settings.mlx_tts_model,
         voice=settings.mlx_tts_voice,
         text_filters=build_text_filters(settings.tts_text_filters),

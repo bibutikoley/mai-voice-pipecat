@@ -78,3 +78,30 @@ def test_cartesia_requires_api_key():
 def test_invalid_model_lifecycle_is_rejected():
     with pytest.raises(ConfigError, match="MODEL_LIFECYCLE"):
         load_settings({"MODEL_LIFECYCLE": "forever"})
+
+
+def test_sarvam_defaults():
+    settings = load_settings({"SARVAM_API_KEY": "test-key"})
+    assert settings.sarvam_stt_model == "saaras:v4"
+    assert settings.sarvam_tts_model == "bulbul:v3"
+    assert settings.sarvam_tts_voice == "shubh"
+    assert settings.sarvam_language == "en-IN"
+
+
+@pytest.mark.parametrize("env", [{"STT_PROVIDER": "sarvam"}, {"TTS_PROVIDER": "sarvam"}])
+def test_sarvam_audio_requires_api_key(env):
+    with pytest.raises(ConfigError, match="SARVAM_API_KEY"):
+        load_settings(env)
+
+
+def test_sarvam_llm_requires_api_key():
+    with pytest.raises(ConfigError, match="SARVAM_API_KEY"):
+        load_settings({"LLM_MODE": "sarvam"})
+
+
+def test_sarvam_language_helper_accepts_iso_codes():
+    from mai_voice.providers._languages import pipecat_language
+
+    assert pipecat_language("hi-IN").value == "hi-IN"
+    with pytest.raises(ConfigError, match="Unsupported language"):
+        pipecat_language("klingon")

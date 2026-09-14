@@ -31,6 +31,10 @@ STT_PROVIDERS: dict[str, ProviderSpec] = {
     ),
     "qwen": ProviderSpec("mai_voice.providers.stt_qwen"),
     "mlx": ProviderSpec("mai_voice.providers.stt_mlx"),
+    "sarvam": ProviderSpec(
+        "mai_voice.providers.stt_sarvam",
+        hint="The Sarvam SDK should be part of the default image (sarvamai).",
+    ),
     "deepgram": ProviderSpec(
         "mai_voice.providers.stt_deepgram",
         hint='Build/install with the "cloud" extra (EXTRAS=cloud for Docker).',
@@ -45,6 +49,10 @@ TTS_PROVIDERS: dict[str, ProviderSpec] = {
     ),
     "qwen": ProviderSpec("mai_voice.providers.tts_qwen"),
     "mlx": ProviderSpec("mai_voice.providers.tts_mlx"),
+    "sarvam": ProviderSpec(
+        "mai_voice.providers.tts_sarvam",
+        hint="The Sarvam SDK should be part of the default image (sarvamai).",
+    ),
     "cartesia": ProviderSpec(
         "mai_voice.providers.tts_cartesia",
         hint='Build/install with the "cloud" extra (EXTRAS=cloud for Docker).',
@@ -54,6 +62,10 @@ TTS_PROVIDERS: dict[str, ProviderSpec] = {
 LLM_PROVIDERS: dict[str, ProviderSpec] = {
     "stub": ProviderSpec("mai_voice.providers.llm_stub"),
     "openai_compatible": ProviderSpec("mai_voice.providers.llm_openai_compatible"),
+    "sarvam": ProviderSpec(
+        "mai_voice.providers.llm_sarvam",
+        hint="The Sarvam SDK should be part of the default image (sarvamai).",
+    ),
 }
 
 

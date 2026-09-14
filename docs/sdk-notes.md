@@ -71,7 +71,10 @@ client. The SDK then negotiates WebRTC against `/sessions/{id}/api/offer`.
 ## Verified end-to-end
 
 - Backend: aiortc harness posting an SDP offer, sending speech, and recording the
-  bot's reply; bot audio round-tripped through Qwen ASR on the host read back as
-  "Hi. Stub reply. You said this is a local Qwen voice test."
+  bot's reply.
+  - MLX providers (default): transcript returned and bot audio received over
+    WebRTC; warm STT ≈ 0.2s server-side, TTS ≈ 0.7× realtime on an M-series Mac.
+  - In-container providers: bot audio round-tripped through Qwen ASR read back as
+    "Hi. Stub reply. You said this is a local Qwen voice test."
 - iOS simulator: connects, receives greeting, renders user/bot transcripts.
 - Android emulator: same, against `10.0.2.2:7860`.

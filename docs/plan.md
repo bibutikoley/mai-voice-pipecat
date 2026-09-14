@@ -1,5 +1,9 @@
 # mai-voice-pipecat — Build Plan
 
+> Historical planning document. The "Locked decisions" and later sections record
+> the original plan; for current behavior use the other docs and the
+> Implementation status at the bottom (which supersedes anything above it).
+
 Voice AI monorepo: a Dockerized Pipecat server with native Android and iOS clients.
 
 ## Locked decisions
@@ -187,8 +191,26 @@ Built and verified:
   Docker server from the emulator and renders the greeting transcript.
 - iOS: full UI with SPM packages 1.3.0; connects from the simulator
   (`--auto-connect` flag for testing) and renders user/bot transcripts.
-- Backend tests (21) and ruff pass; Android `assembleDebug` and iOS
+- Backend tests (38) and ruff pass; Android `assembleDebug` and iOS
   `xcodebuild` succeed.
+
+Later additions (current state):
+
+- **MLX host servers**: STT and TTS run natively on Apple Silicon as two
+  independent processes — `make stt-server` (127.0.0.1:8001) and
+  `make tts-server` (127.0.0.1:8002) — called by the container over HTTP via
+  `host.docker.internal`. Loopback-only: LAN devices get connection refused.
+  `make stt-stop` / `make tts-stop` are independent of each other and of the
+  Docker server. This replaces in-container inference for the default setup.
+- **Sarvam AI**: `STT_PROVIDER=sarvam`, `TTS_PROVIDER=sarvam`, `LLM_MODE=sarvam`
+  (Indic languages); SDK is in the default image, so switching is env-only.
+- **Voice output cleanup**: markdown/emoji text filters (`TTS_TEXT_FILTERS`) and
+  a +6 dB gain stage (`TTS_GAIN_DB`), plus a system prompt that keeps replies to
+  one or two spoken sentences.
+- **Speaker routing**: both apps default to the loudspeaker with a persisted
+  speaker/earpiece toggle.
+- Defaults are now `STT_PROVIDER=mlx` / `TTS_PROVIDER=mlx`; in-container
+  providers remain available as fallbacks.
 
 Deviations from the plan as written above:
 

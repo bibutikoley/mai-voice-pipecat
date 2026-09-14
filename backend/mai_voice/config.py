@@ -12,9 +12,9 @@ import os
 from collections.abc import Mapping
 from dataclasses import dataclass
 
-STT_PROVIDERS = ("moonshine", "whisper", "qwen", "deepgram", "mlx")
-TTS_PROVIDERS = ("kokoro", "piper", "qwen", "cartesia", "mlx")
-LLM_MODES = ("stub", "openai_compatible")
+STT_PROVIDERS = ("moonshine", "whisper", "qwen", "deepgram", "mlx", "sarvam")
+TTS_PROVIDERS = ("kokoro", "piper", "qwen", "cartesia", "mlx", "sarvam")
+LLM_MODES = ("stub", "openai_compatible", "sarvam")
 MODEL_LIFECYCLES = ("session", "warm")
 
 
@@ -57,10 +57,19 @@ class Settings:
     tts_text_filters: tuple[str, ...] = ("markdown", "emoji")
 
     # MLX-Audio host servers (Apple Silicon, HTTP on the Mac's loopback)
-    mlx_audio_base_url: str = "http://host.docker.internal:8000"
+    mlx_stt_base_url: str = "http://host.docker.internal:8001"
+    mlx_tts_base_url: str = "http://host.docker.internal:8002"
     mlx_stt_model: str = "mlx-community/Qwen3-ASR-0.6B-8bit"
     mlx_tts_model: str = "mlx-community/Qwen3-TTS-12Hz-0.6B-CustomVoice-8bit"
     mlx_tts_voice: str = "Ryan"
+
+    # Sarvam AI (cloud, Indic languages)
+    sarvam_api_key: str | None = None
+    sarvam_language: str = "en-IN"
+    sarvam_stt_model: str = "saaras:v4"
+    sarvam_tts_model: str = "bulbul:v3"
+    sarvam_tts_voice: str = "shubh"
+    sarvam_llm_model: str = "sarvam-105b"
 
     # Server
     host: str = "0.0.0.0"
@@ -145,13 +154,20 @@ def load_settings(env: Mapping[str, str] | None = None) -> Settings:
         cartesia_api_key=env.get("CARTESIA_API_KEY") or None,
         tts_gain_db=_float_env(env, "TTS_GAIN_DB", 6.0),
         tts_text_filters=_list_env(env, "TTS_TEXT_FILTERS", ("markdown", "emoji")),
-        mlx_audio_base_url=(
-            env.get("MLX_AUDIO_BASE_URL") or "http://host.docker.internal:8000"
-        ),
+        mlx_stt_base_url=env.get("MLX_STT_BASE_URL")
+        or "http://host.docker.internal:8001",
+        mlx_tts_base_url=env.get("MLX_TTS_BASE_URL")
+        or "http://host.docker.internal:8002",
         mlx_stt_model=env.get("MLX_STT_MODEL") or "mlx-community/Qwen3-ASR-0.6B-8bit",
         mlx_tts_model=env.get("MLX_TTS_MODEL")
         or "mlx-community/Qwen3-TTS-12Hz-0.6B-CustomVoice-8bit",
         mlx_tts_voice=env.get("MLX_TTS_VOICE") or "Ryan",
+        sarvam_api_key=env.get("SARVAM_API_KEY") or None,
+        sarvam_language=env.get("SARVAM_LANGUAGE") or "en-IN",
+        sarvam_stt_model=env.get("SARVAM_STT_MODEL") or "saaras:v4",
+        sarvam_tts_model=env.get("SARVAM_TTS_MODEL") or "bulbul:v3",
+        sarvam_tts_voice=env.get("SARVAM_TTS_VOICE") or "shubh",
+        sarvam_llm_model=env.get("SARVAM_LLM_MODEL") or "sarvam-105b",
         host=env.get("HOST") or "0.0.0.0",
         port=int(env.get("PORT") or "7860"),
     )
@@ -176,5 +192,14 @@ def load_settings(env: Mapping[str, str] | None = None) -> Settings:
 
     if settings.tts_provider == "cartesia" and not settings.cartesia_api_key:
         raise ConfigError("TTS_PROVIDER=cartesia requires CARTESIA_API_KEY")
+
+    if settings.stt_provider == "sarvam" and not settings.sarvam_api_key:
+        raise ConfigError("STT_PROVIDER=sarvam requires SARVAM_API_KEY")
+
+    if settings.tts_provider == "sarvam" and not settings.sarvam_api_key:
+        raise ConfigError("TTS_PROVIDER=sarvam requires SARVAM_API_KEY")
+
+    if settings.llm_mode == "sarvam" and not settings.sarvam_api_key:
+        raise ConfigError("LLM_MODE=sarvam requires SARVAM_API_KEY")
 
     return settings

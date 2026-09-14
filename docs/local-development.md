@@ -13,19 +13,30 @@
 
 ```bash
 cp backend/.env.example backend/.env     # defaults to the MLX providers
-make audio-server                        # terminal 1: STT/TTS on the Mac (127.0.0.1:8000)
-make up                                  # terminal 2: build image + start server
+make stt-server                          # terminal 1: STT server (127.0.0.1:8001)
+make tts-server                          # terminal 2: TTS server (127.0.0.1:8002)
+make up                                  # terminal 3: Docker Pipecat server (:7860)
 open http://localhost:7860/client        # talk through the browser
 ```
 
-`make audio-server` runs `mlx_audio.server` natively (Metal/MLX). The first
-request per model downloads and loads it; after that models stay warm. It is
-bound to loopback only — the Docker backend reaches it through
-`host.docker.internal`, and phones cannot connect to it.
+The two host servers are independent processes: changing or restarting one
+(`make stt-stop` / `make tts-stop`, then the matching start) never affects the
+other or the Docker server. They run `mlx_audio.server` natively (Metal/MLX); the
+first request per model downloads and loads it, after which models stay warm.
+Both bind to loopback only — the Docker backend reaches them through
+`host.docker.internal`, and phones cannot connect to them.
 
-If you prefer everything in-container (no host server), set
-`STT_PROVIDER=moonshine` and `TTS_PROVIDER=kokoro` in `backend/.env` and skip
-`make audio-server`.
+Stop each server independently:
+
+```bash
+make stt-stop    # stop only the STT server
+make tts-stop    # stop only the TTS server
+make down        # stop the Docker Pipecat server
+```
+
+If you prefer everything in-container (no host servers), set
+`STT_PROVIDER=moonshine` and `TTS_PROVIDER=kokoro` in `backend/.env` and skip the
+two host-server commands.
 
 Useful targets:
 
@@ -83,13 +94,16 @@ The development runner also serves a prebuilt browser client at `/client/`.
   `localhost`. Check the Settings screen value.
 - **iOS HTTP blocked** — `Info.plist` sets `NSAllowsLocalNetworking`; keep the
   server on plain HTTP only for dev.
-- **First session is slow** — Moonshine/Kokoro load per session
-  (`MODEL_LIFECYCLE=session`). Run `make models` first so nothing downloads
-  mid-session, or set `MODEL_LIFECYCLE=warm` while iterating.
+- **First session is slow (in-container providers)** — Moonshine/Kokoro/Qwen
+  load per session (`MODEL_LIFECYCLE=session`). Run `make models` first so
+  nothing downloads mid-session. MLX providers are unaffected: their models load
+  in the host servers and stay warm.
 - **Qwen is slow** — CPU inference is seconds per sentence; see
   `docs/providers.md`.
-- **No bot audio with `*_PROVIDER=mlx`** — is `make audio-server` running? Check
-  `curl http://127.0.0.1:8000/` on the Mac, and
-  `docker compose exec backend curl -s http://host.docker.internal:8000/`.
-- **`make audio-server` not reachable from the phone** — that is by design. The
-  MLX server is loopback-only; only the Pipecat server (port 7860) is exposed.
+- **No bot audio with `*_PROVIDER=mlx`** — are the host servers running? Check
+  `curl http://127.0.0.1:8001/` (STT) and `curl http://127.0.0.1:8002/` (TTS) on
+  the Mac, and from the container:
+  `docker compose exec backend curl -s http://host.docker.internal:8001/`.
+- **`make stt-server` / `make tts-server` not reachable from the phone** — that
+  is by design. They are loopback-only; only the Pipecat server (port 7860) is
+  exposed.
