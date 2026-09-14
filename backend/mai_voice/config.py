@@ -12,7 +12,7 @@ import os
 from collections.abc import Mapping
 from dataclasses import dataclass
 
-STT_PROVIDERS = ("moonshine", "whisper", "qwen", "deepgram", "mlx", "sarvam")
+STT_PROVIDERS = ("moonshine", "whisper", "qwen", "deepgram", "gemini", "mlx", "sarvam")
 TTS_PROVIDERS = ("kokoro", "piper", "qwen", "cartesia", "mlx", "sarvam")
 LLM_MODES = ("stub", "openai_compatible", "sarvam")
 MODEL_LIFECYCLES = ("session", "warm")
@@ -44,6 +44,9 @@ class Settings:
     qwen_asr_language: str = "English"
     qwen_asr_device: str = "cpu"
     deepgram_api_key: str | None = None
+    gemini_api_key: str | None = None
+    gemini_stt_model: str = "gemini-3.5-transcribe-live"
+    gemini_stt_language: str | None = None
 
     # TTS options
     kokoro_voice: str = "af_heart"
@@ -145,6 +148,9 @@ def load_settings(env: Mapping[str, str] | None = None) -> Settings:
         qwen_asr_language=env.get("QWEN_ASR_LANGUAGE") or "English",
         qwen_asr_device=env.get("QWEN_ASR_DEVICE") or "cpu",
         deepgram_api_key=env.get("DEEPGRAM_API_KEY") or None,
+        gemini_api_key=env.get("GEMINI_API_KEY") or None,
+        gemini_stt_model=env.get("GEMINI_STT_MODEL") or "gemini-3.5-transcribe-live",
+        gemini_stt_language=env.get("GEMINI_STT_LANGUAGE") or None,
         kokoro_voice=env.get("KOKORO_VOICE") or "af_heart",
         piper_voice=env.get("PIPER_VOICE") or "en_US-ryan-high",
         qwen_tts_model=env.get("QWEN_TTS_MODEL") or "Qwen/Qwen3-TTS-12Hz-0.6B-CustomVoice",
@@ -189,6 +195,9 @@ def load_settings(env: Mapping[str, str] | None = None) -> Settings:
 
     if settings.stt_provider == "deepgram" and not settings.deepgram_api_key:
         raise ConfigError("STT_PROVIDER=deepgram requires DEEPGRAM_API_KEY")
+
+    if settings.stt_provider == "gemini" and not settings.gemini_api_key:
+        raise ConfigError("STT_PROVIDER=gemini requires GEMINI_API_KEY")
 
     if settings.tts_provider == "cartesia" and not settings.cartesia_api_key:
         raise ConfigError("TTS_PROVIDER=cartesia requires CARTESIA_API_KEY")

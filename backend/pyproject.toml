@@ -17,6 +17,9 @@ dependencies = [
 whisper = ["pipecat-ai[whisper]>=1.10.0,<2"]
 piper = ["pipecat-ai[piper]>=1.10.0,<2"]
 cloud = ["pipecat-ai[deepgram,cartesia]>=1.10.0,<2"]
+# Gemini Live transcription requires google-genai >= 2.9.0 (the floor in
+# pipecat's own "google" extra is lower).
+google = ["pipecat-ai[google]>=1.10.0,<2", "google-genai>=2.9.0"]
 
 [dependency-groups]
 dev = [

@@ -14,6 +14,7 @@ def test_registry_contains_expected_providers():
         "whisper",
         "qwen",
         "deepgram",
+        "gemini",
         "mlx",
         "sarvam",
     }

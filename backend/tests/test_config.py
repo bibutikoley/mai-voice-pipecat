@@ -75,6 +75,17 @@ def test_cartesia_requires_api_key():
         load_settings({"TTS_PROVIDER": "cartesia"})
 
 
+def test_gemini_requires_api_key():
+    with pytest.raises(ConfigError, match="GEMINI_API_KEY"):
+        load_settings({"STT_PROVIDER": "gemini"})
+
+
+def test_gemini_defaults():
+    settings = load_settings({"GEMINI_API_KEY": "test-key"})
+    assert settings.gemini_stt_model == "gemini-3.5-transcribe-live"
+    assert settings.gemini_stt_language is None
+
+
 def test_invalid_model_lifecycle_is_rejected():
     with pytest.raises(ConfigError, match="MODEL_LIFECYCLE"):
         load_settings({"MODEL_LIFECYCLE": "forever"})

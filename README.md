@@ -5,9 +5,9 @@ Android and iOS clients.
 
 - **Server**: SmallWebRTC transport, Silero VAD, swappable STT + TTS — MLX
   (Apple Silicon, host servers), local in-container (Moonshine / Kokoro / Qwen),
-  or cloud (Deepgram / Cartesia / Sarvam) — and an OpenAI-compatible or Sarvam
-  LLM. The Pipecat server runs only in Docker; STT/TTS can run natively on the
-  Mac behind loopback-only HTTP servers.
+  or cloud (Deepgram / Gemini / Cartesia / Sarvam) — and an OpenAI-compatible or
+  Sarvam LLM. The Pipecat server runs only in Docker; STT/TTS can run natively on
+  the Mac behind loopback-only HTTP servers.
 - **Clients**: `frontend/mai-voice-android` (Compose) and
   `frontend/mai-voice-ios` (SwiftUI), both using the Pipecat client SDKs.
 
@@ -34,7 +34,7 @@ Stop them independently: `make stt-stop`, `make tts-stop`, `make down`.
 Edit `backend/.env` and `make restart`. STT and TTS are independent:
 
 ```env
-STT_PROVIDER=mlx         # mlx | moonshine | whisper | qwen | deepgram | sarvam
+STT_PROVIDER=mlx         # mlx | moonshine | whisper | qwen | deepgram | gemini | sarvam
 TTS_PROVIDER=mlx         # mlx | kokoro | piper | qwen | cartesia | sarvam
 LLM_MODE=stub            # stub | openai_compatible | sarvam
 ```
@@ -43,10 +43,11 @@ LLM_MODE=stub            # stub | openai_compatible | sarvam
 (Metal/MLX) and is loopback-only. `sarvam` adds Indic-language cloud
 STT/TTS/LLM (built into the default image). The other providers run inside the
 container. Qwen works out of the box with the models in your Hugging Face cache;
-Whisper/Piper/cloud providers need an image built with extras:
+Whisper/Piper/cloud providers need an image built with extras (`google` for
+Gemini STT):
 
 ```bash
-EXTRAS="whisper piper cloud" make build
+EXTRAS="whisper piper cloud google" make build
 ```
 
 ## LLM

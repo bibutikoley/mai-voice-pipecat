@@ -39,6 +39,10 @@ STT_PROVIDERS: dict[str, ProviderSpec] = {
         "mai_voice.providers.stt_deepgram",
         hint='Build/install with the "cloud" extra (EXTRAS=cloud for Docker).',
     ),
+    "gemini": ProviderSpec(
+        "mai_voice.providers.stt_gemini",
+        hint='Build/install with the "google" extra (EXTRAS=google for Docker).',
+    ),
 }
 
 TTS_PROVIDERS: dict[str, ProviderSpec] = {

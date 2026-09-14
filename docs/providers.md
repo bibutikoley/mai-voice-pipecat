@@ -5,7 +5,7 @@ OpenAI-compatible endpoint, or Sarvam. Switch by editing `backend/.env` and
 running `make restart` — no rebuild needed for `mlx`, `qwen`, or `sarvam`.
 
 ```env
-STT_PROVIDER=mlx         # mlx | moonshine | whisper | qwen | deepgram | sarvam
+STT_PROVIDER=mlx         # mlx | moonshine | whisper | qwen | deepgram | gemini | sarvam
 TTS_PROVIDER=mlx         # mlx | kokoro | piper | qwen | cartesia | sarvam
 LLM_MODE=stub            # stub | openai_compatible | sarvam
 MODEL_LIFECYCLE=session  # session | warm
@@ -22,7 +22,7 @@ MODEL_LIFECYCLE=session  # session | warm
 | qwen | qwen | both |
 | sarvam | any | nothing (cloud API) |
 | any | sarvam | nothing (cloud API) |
-| whisper / deepgram | piper / cartesia | optional extras |
+| whisper / deepgram / gemini | piper / cartesia | optional extras |
 
 ## Providers
 
@@ -34,6 +34,7 @@ MODEL_LIFECYCLE=session  # session | warm
 | Whisper | STT | `pipecat-ai[whisper]` extra, HF cache | faster-whisper `base.en`; multilingual capable |
 | Qwen3-ASR | STT | `qwen-asr`, HF cache | local transformers backend, CPU; segmented (not streaming) |
 | Deepgram | STT | `cloud` extra | cloud API key |
+| Gemini 3.5 Transcribe | STT | `google` extra | cloud; Gemini Live transcription; `GEMINI_API_KEY`; auto-detects language |
 | Kokoro | TTS | `pipecat-ai[kokoro]`, `~/.cache/pipecat/kokoro-onnx` | ONNX CPU, `af_heart` default voice |
 | Piper | TTS | `piper` extra | GPL-3; voices from HF |
 | Qwen3-TTS | TTS | `qwen-tts`, HF cache | local, non-streaming generation chunked for playback |
@@ -61,6 +62,28 @@ Notes:
   `openai_compatible` mode does not, so Sarvam's LLM needs this provider).
 - Mix freely, e.g. `STT_PROVIDER=sarvam` + `TTS_PROVIDER=mlx` for Indic speech
   in and Qwen voice out.
+
+## Gemini 3.5 Transcribe (cloud STT)
+
+Streams audio to a Gemini Live transcription model. The service is an optional
+extra, so build the image with `EXTRAS=google`:
+
+```bash
+EXTRAS="google" make build
+```
+
+```env
+STT_PROVIDER=gemini
+GEMINI_API_KEY=...
+GEMINI_STT_MODEL=gemini-3.5-transcribe-live
+# GEMINI_STT_LANGUAGE=en-US   # optional hint; omit to auto-detect
+```
+
+- Language is auto-detected by default; set `GEMINI_STT_LANGUAGE` to an ISO
+  code (e.g. `en-US`, `hi-IN`) to hint the expected language.
+- The extra also installs `google-genai >= 2.9.0`, which Gemini transcription
+  models require.
+- Mix freely, e.g. `STT_PROVIDER=gemini` + `TTS_PROVIDER=kokoro`.
 
 ## Apple Silicon (MLX) servers
 

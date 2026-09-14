@@ -46,7 +46,7 @@ make restart     # after editing backend/.env
 make down        # stop
 make test        # backend unit tests (host uv)
 make lint        # ruff
-EXTRAS="whisper piper cloud" make build   # optional providers
+EXTRAS="whisper piper cloud google" make build   # optional providers
 ```
 
 ## Apps
