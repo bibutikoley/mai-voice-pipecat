@@ -58,10 +58,12 @@ private fun MaiVoiceApp(viewModel: VoiceAgentViewModel = viewModel()) {
     if (showSettings) {
         SettingsScreen(
             currentUrl = state.serverUrl,
+            speakerEnabled = state.speakerEnabled,
             onSave = {
                 viewModel.saveServerUrl(it)
                 showSettings = false
             },
+            onToggleSpeaker = viewModel::toggleSpeaker,
             onBack = { showSettings = false },
         )
     } else {

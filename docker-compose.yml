@@ -20,6 +20,8 @@ services:
     ports:
       - "7860:7860"
     volumes: *model-volumes
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     stop_grace_period: 20s
 
   # One-shot model cache warm-up: docker compose --profile tools run --rm models

@@ -13,6 +13,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
@@ -29,7 +30,9 @@ import androidx.compose.ui.unit.dp
 @Composable
 fun SettingsScreen(
     currentUrl: String,
+    speakerEnabled: Boolean,
     onSave: (String) -> Unit,
+    onToggleSpeaker: () -> Unit,
     onBack: () -> Unit,
 ) {
     var url by remember(currentUrl) { mutableStateOf(currentUrl) }
@@ -69,6 +72,25 @@ fun SettingsScreen(
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.outline,
             )
+
+            Spacer(Modifier.height(8.dp))
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Column {
+                    Text("Speaker", style = MaterialTheme.typography.titleMedium)
+                    Text(
+                        text = if (speakerEnabled) "Playing through the loudspeaker" else "Playing through the earpiece",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.outline,
+                    )
+                }
+                Switch(checked = speakerEnabled, onCheckedChange = { onToggleSpeaker() })
+            }
+
             Spacer(Modifier.height(4.dp))
             Row(
                 modifier = Modifier.fillMaxWidth(),

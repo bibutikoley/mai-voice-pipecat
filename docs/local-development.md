@@ -3,19 +3,29 @@
 ## Prerequisites
 
 - Docker (this repo was developed against OrbStack) — the server runs **only** in Docker
-- `uv` — dependency management, tests, lint (not required to run the server)
-- `hf` (Hugging Face CLI) — optional model pulls; Qwen models load from the HF cache
+- `uv` — dependency management, tests, lint, and the host MLX audio server
+- Apple Silicon Mac for the recommended MLX STT/TTS servers
+- `hf` (Hugging Face CLI) — optional model pulls; MLX models use the HF cache
 - Xcode 26+ with an iOS simulator (iOS app)
 - Android SDK + an emulator image (Android app)
 
 ## Server
 
 ```bash
-cp backend/.env.example backend/.env     # defaults need no API keys
-make models                              # one-time: warm Moonshine + Kokoro caches
-make up                                  # build image + start server
+cp backend/.env.example backend/.env     # defaults to the MLX providers
+make audio-server                        # terminal 1: STT/TTS on the Mac (127.0.0.1:8000)
+make up                                  # terminal 2: build image + start server
 open http://localhost:7860/client        # talk through the browser
 ```
+
+`make audio-server` runs `mlx_audio.server` natively (Metal/MLX). The first
+request per model downloads and loads it; after that models stay warm. It is
+bound to loopback only — the Docker backend reaches it through
+`host.docker.internal`, and phones cannot connect to it.
+
+If you prefer everything in-container (no host server), set
+`STT_PROVIDER=moonshine` and `TTS_PROVIDER=kokoro` in `backend/.env` and skip
+`make audio-server`.
 
 Useful targets:
 
@@ -78,3 +88,8 @@ The development runner also serves a prebuilt browser client at `/client/`.
   mid-session, or set `MODEL_LIFECYCLE=warm` while iterating.
 - **Qwen is slow** — CPU inference is seconds per sentence; see
   `docs/providers.md`.
+- **No bot audio with `*_PROVIDER=mlx`** — is `make audio-server` running? Check
+  `curl http://127.0.0.1:8000/` on the Mac, and
+  `docker compose exec backend curl -s http://host.docker.internal:8000/`.
+- **`make audio-server` not reachable from the phone** — that is by design. The
+  MLX server is loopback-only; only the Pipecat server (port 7860) is exposed.

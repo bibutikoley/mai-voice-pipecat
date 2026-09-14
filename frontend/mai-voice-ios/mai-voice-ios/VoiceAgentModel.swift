@@ -29,6 +29,7 @@ final class VoiceAgentModel: NSObject, ObservableObject, PipecatClientDelegate {
     static let defaultServerURL = "http://localhost:7860"
 
     private static let serverURLKey = "server_url"
+    private static let speakerEnabledKey = "speaker_enabled"
 
     @Published var status: ConnectionStatus = .idle
     @Published var botReady = false
@@ -41,12 +42,15 @@ final class VoiceAgentModel: NSObject, ObservableObject, PipecatClientDelegate {
     @Published var transcripts: [TranscriptEntry] = []
     @Published var errorMessage: String?
     @Published var serverURL: String
+    @Published var speakerEnabled: Bool
 
     private var client: PipecatClient?
 
     override init() {
         let stored = UserDefaults.standard.string(forKey: Self.serverURLKey)
         self.serverURL = stored ?? Self.defaultServerURL
+        let storedSpeaker = UserDefaults.standard.object(forKey: Self.speakerEnabledKey) as? Bool
+        self.speakerEnabled = storedSpeaker ?? true
         super.init()
 
         // Dev/testing affordance: connect as soon as the app launches.
@@ -85,6 +89,7 @@ final class VoiceAgentModel: NSObject, ObservableObject, PipecatClientDelegate {
         let newClient = PipecatClient(options: options)
         newClient.delegate = self
         client = newClient
+        applyAudioRoute()
 
         let request = APIRequest(
             endpoint: endpoint,
@@ -124,7 +129,23 @@ final class VoiceAgentModel: NSObject, ObservableObject, PipecatClientDelegate {
         errorMessage = nil
     }
 
+    func toggleSpeaker() {
+        speakerEnabled.toggle()
+        UserDefaults.standard.set(speakerEnabled, forKey: Self.speakerEnabledKey)
+        applyAudioRoute()
+    }
+
     // MARK: - Internals
+
+    /// WebRTC sessions default to the earpiece on iOS in some configurations;
+    /// explicitly select the loudspeaker (or earpiece) after connecting.
+    private func applyAudioRoute() {
+        guard let client else { return }
+        let deviceId = speakerEnabled ? "speakerphone" : "earpiece"
+        Task { @MainActor in
+            try? await client.updateSpeaker(speakerId: MediaDeviceId(id: deviceId))
+        }
+    }
 
     private func fail(_ message: String) {
         errorMessage = message
@@ -153,6 +174,7 @@ final class VoiceAgentModel: NSObject, ObservableObject, PipecatClientDelegate {
 
     func onConnected() {
         status = .connected
+        applyAudioRoute()
     }
 
     func onDisconnected() {

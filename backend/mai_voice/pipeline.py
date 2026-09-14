@@ -21,10 +21,18 @@ from pipecat.processors.aggregators.llm_response_universal import (
 from pipecat.transports.base_transport import BaseTransport
 
 from mai_voice.config import Settings
+from mai_voice.processors.gain import AudioGainProcessor
 from mai_voice.providers import create_llm, create_stt, create_tts
 
 GREETING_PROMPT = (
     "Greet the user warmly in one short sentence and ask how you can help."
+)
+
+SYSTEM_PROMPT = (
+    "You are a friendly voice assistant in a spoken conversation. "
+    "Keep every reply to one or two short sentences. "
+    "Never use markdown, lists, tables, headings, emoji, or code — the reply is "
+    "spoken aloud. If a topic needs detail, give one key point and offer to continue."
 )
 
 
@@ -37,6 +45,7 @@ async def run_bot(transport: BaseTransport, settings: Settings, handle_sigint: b
     )
 
     context = LLMContext()
+    context.add_message({"role": "system", "content": SYSTEM_PROMPT})
     user_aggregator, assistant_aggregator = LLMContextAggregatorPair(
         context,
         user_params=LLMUserAggregatorParams(vad_analyzer=SileroVADAnalyzer()),
@@ -45,6 +54,7 @@ async def run_bot(transport: BaseTransport, settings: Settings, handle_sigint: b
     stt = create_stt(settings)
     tts = create_tts(settings)
     llm = create_llm(settings)
+    gain = AudioGainProcessor(gain_db=settings.tts_gain_db)
 
     pipeline = Pipeline(
         [
@@ -53,6 +63,7 @@ async def run_bot(transport: BaseTransport, settings: Settings, handle_sigint: b
             user_aggregator,
             llm,
             tts,
+            gain,
             transport.output(),
             assistant_aggregator,
         ]

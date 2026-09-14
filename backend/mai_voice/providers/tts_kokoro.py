@@ -7,6 +7,7 @@ from pipecat.transcriptions.language import Language
 
 from mai_voice.config import Settings
 from mai_voice.lifecycle import ReleasesModels
+from mai_voice.processors.text_filters import build_text_filters
 
 
 class KokoroLocal(ReleasesModels, KokoroTTSService):
@@ -21,5 +22,6 @@ def create(settings: Settings) -> KokoroTTSService:
             voice=settings.kokoro_voice,
             language=Language.EN_US,
             speed=1.0,
-        )
+        ),
+        text_filters=build_text_filters(settings.tts_text_filters),
     )

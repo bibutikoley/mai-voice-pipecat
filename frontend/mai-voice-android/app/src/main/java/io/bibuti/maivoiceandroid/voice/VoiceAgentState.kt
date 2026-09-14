@@ -13,6 +13,7 @@ data class TranscriptEntry(
 data class VoiceUiState(
     val status: ConnectionStatus = ConnectionStatus.Idle,
     val serverUrl: String = "",
+    val speakerEnabled: Boolean = true,
     val botReady: Boolean = false,
     val micEnabled: Boolean = true,
     val userSpeaking: Boolean = false,

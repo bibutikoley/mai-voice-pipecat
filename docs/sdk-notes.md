@@ -23,6 +23,11 @@ client. The SDK then negotiates WebRTC against `/sessions/{id}/api/offer`.
   tokens, committed to a bubble when `onBotStoppedSpeaking` fires).
 - Audio levels (`onUserAudioLevel` / `onRemoteAudioLevel`) drive the orb.
 - Server URL is persisted with DataStore; default `http://10.0.2.2:7860`.
+- Audio routing: WebRTC communication audio defaults to the earpiece on many
+  devices, so the client calls
+  `updateMic(SmallWebRTCTransport.AudioDevices.Speakerphone)` on connect.
+  A persisted "Speaker" toggle in Settings switches between speakerphone and
+  earpiece live.
 - Compose BOM note: `material-icons-*` is not bundled; use text buttons or add
   the icons artifact explicitly.
 - Build: `./gradlew :app:assembleDebug`.
@@ -44,6 +49,10 @@ client. The SDK then negotiates WebRTC against `/sessions/{id}/api/offer`.
   .object(["transport": .string("webrtc")]))` and
   `startBotAndConnect` with `SmallWebRTCStartBotResult`.
 - `--auto-connect` launch argument connects at startup (used by the E2E check).
+- Audio routing: the SDK's audio manager prefers the speakerphone, but the app
+  also explicitly calls `updateSpeaker(speakerId: MediaDeviceId(id:
+  "speakerphone"))` before and after connecting. A persisted "Play through
+  speaker" toggle in Settings switches to the earpiece live.
 - Server URL is persisted in `UserDefaults`; default `http://localhost:7860`.
 - Build: `xcodebuild -project mai-voice-ios.xcodeproj -scheme mai-voice-ios
   -destination 'platform=iOS Simulator,name=iPhone 17' build`.

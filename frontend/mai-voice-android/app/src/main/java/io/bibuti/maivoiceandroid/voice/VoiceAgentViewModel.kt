@@ -34,6 +34,31 @@ class VoiceAgentViewModel(application: Application) : AndroidViewModel(applicati
         viewModelScope.launch {
             settings.serverUrl.collect { url -> _state.update { it.copy(serverUrl = url) } }
         }
+        viewModelScope.launch {
+            settings.speakerEnabled.collect { enabled ->
+                val wasEnabled = _state.value.speakerEnabled
+                _state.update { it.copy(speakerEnabled = enabled) }
+                // Re-route live audio when the preference changes.
+                if (wasEnabled != enabled && _state.value.status == ConnectionStatus.Connected) {
+                    applyAudioRoute(enabled)
+                }
+            }
+        }
+    }
+
+    fun toggleSpeaker() {
+        val enabled = !_state.value.speakerEnabled
+        viewModelScope.launch { settings.setSpeakerEnabled(enabled) }
+    }
+
+    private fun applyAudioRoute(speakerEnabled: Boolean) {
+        val current = client ?: return
+        val device = if (speakerEnabled) {
+            SmallWebRTCTransport.AudioDevices.Speakerphone
+        } else {
+            SmallWebRTCTransport.AudioDevices.Earpiece
+        }
+        current.updateMic(device.id)
     }
 
     fun saveServerUrl(url: String) {
@@ -144,6 +169,9 @@ class VoiceAgentViewModel(application: Application) : AndroidViewModel(applicati
 
         override fun onConnected() {
             _state.update { it.copy(status = ConnectionStatus.Connected) }
+            // WebRTC communication mode defaults to the earpiece on many devices;
+            // route to the speaker unless the user chose otherwise.
+            applyAudioRoute(_state.value.speakerEnabled)
         }
 
         override fun onDisconnected() {

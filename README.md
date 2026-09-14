@@ -3,18 +3,19 @@
 Voice AI monorepo: a Dockerized [Pipecat](https://pipecat.ai) server with native
 Android and iOS clients.
 
-- **Server**: SmallWebRTC transport, Silero VAD, swappable local (Moonshine /
-  Kokoro / Qwen) or cloud (Deepgram / Cartesia) STT + TTS, any
-  OpenAI-compatible LLM. Runs only in Docker.
+- **Server**: SmallWebRTC transport, Silero VAD, swappable STT + TTS — MLX
+  (Apple Silicon, host servers), local in-container (Moonshine / Kokoro / Qwen),
+  or cloud (Deepgram / Cartesia) — and any OpenAI-compatible LLM. Runs only in
+  Docker; STT/TTS can run natively on the Mac behind a loopback-only HTTP server.
 - **Clients**: `frontend/mai-voice-android` (Compose) and
   `frontend/mai-voice-ios` (SwiftUI), both using the Pipecat client SDKs.
 
 ## Quickstart
 
 ```bash
-cp backend/.env.example backend/.env     # defaults need no API keys
-make models                              # warm Moonshine + Kokoro caches (one time)
-make up                                  # build and start the server
+cp backend/.env.example backend/.env     # defaults to the MLX (Apple Silicon) providers
+make audio-server                        # terminal 1: STT/TTS natively on the Mac
+make up                                  # terminal 2: build and start the server
 open http://localhost:7860/client        # browser voice client
 ```
 
@@ -29,13 +30,15 @@ Talk to the bot in the browser, then point the apps at the server:
 Edit `backend/.env` and `make restart`. STT and TTS are independent:
 
 ```env
-STT_PROVIDER=moonshine   # moonshine | whisper | qwen | deepgram
-TTS_PROVIDER=kokoro      # kokoro | piper | qwen | cartesia
+STT_PROVIDER=mlx         # mlx | moonshine | whisper | qwen | deepgram
+TTS_PROVIDER=mlx         # mlx | kokoro | piper | qwen | cartesia
 LLM_MODE=stub            # stub | openai_compatible
 ```
 
-Qwen (ASR and/or TTS) works out of the box with the models in your Hugging Face
-cache. Whisper/Piper/cloud providers need an image built with extras:
+`mlx` runs STT/TTS natively on the Mac via `make audio-server` (Metal/MLX) and
+is loopback-only. The other providers run inside the container. Qwen works out
+of the box with the models in your Hugging Face cache; Whisper/Piper/cloud
+providers need an image built with extras:
 
 ```bash
 EXTRAS="whisper piper cloud" make build
@@ -44,11 +47,12 @@ EXTRAS="whisper piper cloud" make build
 ## LLM
 
 `LLM_MODE=stub` replies with canned text so you can test the full voice loop
-without keys. To use your endpoint:
+without keys. To use your endpoint (e.g. Ollama Cloud at
+`https://ollama.com/v1`):
 
 ```env
 LLM_MODE=openai_compatible
-LLM_BASE_URL=https://your-endpoint/v1
+LLM_BASE_URL=https://ollama.com/v1
 LLM_API_KEY=...
 LLM_MODEL=...
 ```

@@ -18,6 +18,7 @@ from pipecat.services.tts_service import TTSService
 
 from mai_voice.config import Settings
 from mai_voice.lifecycle import ReleasesModels
+from mai_voice.processors.text_filters import build_text_filters
 
 QWEN_TTS_SAMPLE_RATE = 24000
 _AUDIO_CHUNK_SECONDS = 0.02
@@ -73,7 +74,24 @@ class QwenTTSService(ReleasesModels, TTSService):
         )
         return np.asarray(wavs[0], dtype=np.float32), int(sample_rate)
 
+    async def _keepalive(self, context_id: str, stop: asyncio.Event) -> None:
+        """Ping the TTS context while the model generates.
+
+        Pipecat waits `stop_frame_timeout_s` (3s by default) for audio in a
+        context before declaring it silent. Qwen TTS is non-streaming and much
+        slower than that on CPU, so the context would be torn down mid-generation
+        without this heartbeat.
+        """
+        while not stop.is_set():
+            self._refresh_audio_context(context_id)
+            try:
+                await asyncio.wait_for(stop.wait(), timeout=1.0)
+            except TimeoutError:
+                continue
+
     async def run_tts(self, text: str, context_id: str) -> AsyncGenerator[Frame, None]:
+        stop = asyncio.Event()
+        keepalive = self.create_task(self._keepalive(context_id, stop))
         try:
             await self.start_tts_usage_metrics(text)
             wav, sample_rate = await asyncio.to_thread(self._generate, text)
@@ -96,6 +114,8 @@ class QwenTTSService(ReleasesModels, TTSService):
             logger.exception("Qwen TTS synthesis failed")
             yield ErrorFrame(error=f"Qwen TTS error: {exc}")
         finally:
+            stop.set()
+            await self.cancel_task(keepalive)
             await self.stop_ttfb_metrics()
 
 
@@ -105,4 +125,5 @@ def create(settings: Settings) -> QwenTTSService:
         speaker=settings.qwen_tts_speaker,
         language=settings.qwen_tts_language,
         device=settings.qwen_tts_device,
+        text_filters=build_text_filters(settings.tts_text_filters),
     )

@@ -12,8 +12,8 @@ import os
 from collections.abc import Mapping
 from dataclasses import dataclass
 
-STT_PROVIDERS = ("moonshine", "whisper", "qwen", "deepgram")
-TTS_PROVIDERS = ("kokoro", "piper", "qwen", "cartesia")
+STT_PROVIDERS = ("moonshine", "whisper", "qwen", "deepgram", "mlx")
+TTS_PROVIDERS = ("kokoro", "piper", "qwen", "cartesia", "mlx")
 LLM_MODES = ("stub", "openai_compatible")
 MODEL_LIFECYCLES = ("session", "warm")
 
@@ -53,6 +53,14 @@ class Settings:
     qwen_tts_language: str = "English"
     qwen_tts_device: str = "cpu"
     cartesia_api_key: str | None = None
+    tts_gain_db: float = 6.0
+    tts_text_filters: tuple[str, ...] = ("markdown", "emoji")
+
+    # MLX-Audio host servers (Apple Silicon, HTTP on the Mac's loopback)
+    mlx_audio_base_url: str = "http://host.docker.internal:8000"
+    mlx_stt_model: str = "mlx-community/Qwen3-ASR-0.6B-8bit"
+    mlx_tts_model: str = "mlx-community/Qwen3-TTS-12Hz-0.6B-CustomVoice-8bit"
+    mlx_tts_voice: str = "Ryan"
 
     # Server
     host: str = "0.0.0.0"
@@ -64,6 +72,28 @@ def _bool_env(env: Mapping[str, str], key: str, default: bool) -> bool:
     if raw is None:
         return default
     return raw.strip().lower() in ("1", "true", "yes", "on")
+
+
+def _float_env(env: Mapping[str, str], key: str, default: float) -> float:
+    raw = env.get(key)
+    if raw is None or not raw.strip():
+        return default
+    try:
+        return float(raw)
+    except ValueError as exc:
+        raise ConfigError(f"{key} must be a number, got '{raw}'") from exc
+
+
+def _list_env(
+    env: Mapping[str, str], key: str, default: tuple[str, ...]
+) -> tuple[str, ...]:
+    raw = env.get(key)
+    if raw is None:
+        return default
+    items = tuple(part.strip().lower() for part in raw.split(",") if part.strip())
+    if not items or items == ("none",):
+        return ()
+    return items
 
 
 def load_settings(env: Mapping[str, str] | None = None) -> Settings:
@@ -113,6 +143,15 @@ def load_settings(env: Mapping[str, str] | None = None) -> Settings:
         qwen_tts_language=env.get("QWEN_TTS_LANGUAGE") or "English",
         qwen_tts_device=env.get("QWEN_TTS_DEVICE") or "cpu",
         cartesia_api_key=env.get("CARTESIA_API_KEY") or None,
+        tts_gain_db=_float_env(env, "TTS_GAIN_DB", 6.0),
+        tts_text_filters=_list_env(env, "TTS_TEXT_FILTERS", ("markdown", "emoji")),
+        mlx_audio_base_url=(
+            env.get("MLX_AUDIO_BASE_URL") or "http://host.docker.internal:8000"
+        ),
+        mlx_stt_model=env.get("MLX_STT_MODEL") or "mlx-community/Qwen3-ASR-0.6B-8bit",
+        mlx_tts_model=env.get("MLX_TTS_MODEL")
+        or "mlx-community/Qwen3-TTS-12Hz-0.6B-CustomVoice-8bit",
+        mlx_tts_voice=env.get("MLX_TTS_VOICE") or "Ryan",
         host=env.get("HOST") or "0.0.0.0",
         port=int(env.get("PORT") or "7860"),
     )

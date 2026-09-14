@@ -246,6 +246,12 @@ private struct SettingsView: View {
                         .autocorrectionDisabled()
                         .keyboardType(.URL)
                 }
+                Section("Audio") {
+                    Toggle("Play through speaker", isOn: Binding(
+                        get: { model.speakerEnabled },
+                        set: { _ in model.toggleSpeaker() }
+                    ))
+                }
                 Section {
                     Text("Simulator: http://localhost:7860\nPhysical device: your Mac's LAN IP (same Wi-Fi)")
                         .font(.footnote)

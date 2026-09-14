@@ -12,14 +12,24 @@
               │  Docker: backend │
               │  Pipecat runner  │
               │  :7860           │
-              └────────┬─────────┘
-                       │
-   Silero VAD → STT (Moonshine/Qwen/Whisper/Deepgram)
-                       │
-        LLM (stub | any OpenAI-compatible endpoint)
-                       │
-     TTS (Kokoro/Qwen/Piper/Cartesia) → transport out
+              └───┬──────────┬───┘
+                  │          │
+   STT/TTS over HTTP          │  LLM over HTTPS
+   host.docker.internal:8000  │  ollama.com
+                  │          │
+        ┌─────────▼────────┐ │
+        │ Mac (Metal/MLX)  │ │
+        │ mlx_audio.server │ │
+        │ 127.0.0.1:8000   │ │
+        └──────────────────┘ │
+                             ▼
+                    gpt-oss:120b (cloud)
 ```
+
+**Trust boundary**: the MLX audio server binds to `127.0.0.1` only. The Docker
+backend reaches it through `host.docker.internal`; phones on the LAN cannot
+connect to it at all. Only the Pipecat server (port 7860) is exposed to clients.
+Verified: LAN IP → connection refused, container → 200.
 
 ## Components
 
@@ -27,7 +37,8 @@
 |---|---|---|
 | Pipecat server | `backend/` | Development runner (FastAPI + uvicorn) that starts one pipeline per session |
 | Providers | `backend/mai_voice/providers/` | Env-selected STT/TTS/LLM services behind a small registry |
-| Lifecycle | `backend/mai_voice/lifecycle.py` | Per-session model release + allocator trim |
+| MLX audio servers | Mac host (`make audio-server`) | STT/TTS inference natively on Apple Silicon; loopback-only, reached by the container |
+| Lifecycle | `backend/mai_voice/lifecycle.py` | Per-session model release + allocator trim (in-container providers) |
 | Docker | `backend/Dockerfile`, `docker-compose.yml` | The only supported way to run the server |
 | Android client | `frontend/mai-voice-android/` | Compose UI + `ai.pipecat:client` SmallWebRTC transport |
 | iOS client | `frontend/mai-voice-ios/` | SwiftUI UI + `PipecatClientIOS` + SmallWebRTC transport |
@@ -41,10 +52,12 @@
 4. Runner instantiates a `SmallWebRTCConnection` and calls `bot()` in a
    background task; the pipeline is built per session.
 5. On connect: developer prompt + `LLMRunFrame` → greeting.
-6. Audio flows over WebRTC; RTVI events carry transcripts, speaking state, and
-   audio levels back to the app.
-7. On disconnect: `task.cancel()` → each service `cleanup()` releases its model
-   and `malloc_trim(0)` returns heap pages to the OS.
+6. Audio flows over WebRTC. With `STT_PROVIDER=mlx` / `TTS_PROVIDER=mlx`, the
+   container calls the Mac's MLX server over HTTP (`host.docker.internal:8000`);
+   models stay warm there and never enter the container's memory.
+7. On disconnect: `task.cancel()` → each service `cleanup()`. In-container
+   providers release their model and `malloc_trim(0)` returns heap pages to the
+   OS; MLX providers hold no models, so there is nothing to release.
 
 ## HTTP surface (port 7860)
 
@@ -65,6 +78,9 @@ Models are not baked into the image. Default host caches are mounted:
 | Kokoro | `~/.cache/pipecat/kokoro-onnx` | `/root/.cache/pipecat` |
 | Moonshine | `~/Library/Caches/moonshine_voice` | `/root/.cache/moonshine_voice` |
 | Qwen / HF models | `~/.cache/huggingface` | `/root/.cache/huggingface` |
+
+MLX models (`mlx-community/...`) download to `~/.cache/huggingface` on the host
+and are loaded by the host server, not by the container.
 
 ## Memory lifecycle
 

@@ -6,6 +6,7 @@ from pipecat.services.piper.tts import PiperTTSService
 
 from mai_voice.config import Settings
 from mai_voice.lifecycle import ReleasesModels
+from mai_voice.processors.text_filters import build_text_filters
 
 
 class PiperLocal(ReleasesModels, PiperTTSService):
@@ -15,4 +16,7 @@ class PiperLocal(ReleasesModels, PiperTTSService):
 
 
 def create(settings: Settings) -> PiperTTSService:
-    return PiperLocal(settings=PiperLocal.Settings(voice=settings.piper_voice))
+    return PiperLocal(
+        settings=PiperLocal.Settings(voice=settings.piper_voice),
+        text_filters=build_text_filters(settings.tts_text_filters),
+    )

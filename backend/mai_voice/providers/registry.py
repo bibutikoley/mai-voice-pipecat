@@ -30,6 +30,7 @@ STT_PROVIDERS: dict[str, ProviderSpec] = {
         hint='Build/install with the "whisper" extra (EXTRAS=whisper for Docker).',
     ),
     "qwen": ProviderSpec("mai_voice.providers.stt_qwen"),
+    "mlx": ProviderSpec("mai_voice.providers.stt_mlx"),
     "deepgram": ProviderSpec(
         "mai_voice.providers.stt_deepgram",
         hint='Build/install with the "cloud" extra (EXTRAS=cloud for Docker).',
@@ -43,6 +44,7 @@ TTS_PROVIDERS: dict[str, ProviderSpec] = {
         hint='Build/install with the "piper" extra (EXTRAS=piper for Docker).',
     ),
     "qwen": ProviderSpec("mai_voice.providers.tts_qwen"),
+    "mlx": ProviderSpec("mai_voice.providers.tts_mlx"),
     "cartesia": ProviderSpec(
         "mai_voice.providers.tts_cartesia",
         hint='Build/install with the "cloud" extra (EXTRAS=cloud for Docker).',
