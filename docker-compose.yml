@@ -1,0 +1,31 @@
+name: mai-voice
+
+x-model-volumes: &model-volumes
+  - ${HOME}/.cache/pipecat:/root/.cache/pipecat
+  - ${HOME}/Library/Caches/moonshine_voice:/root/.cache/moonshine_voice
+  - ${HOME}/.cache/huggingface:/root/.cache/huggingface
+
+x-env-file: &env-file
+  - path: ./backend/.env
+    required: false
+
+services:
+  backend:
+    build:
+      context: ./backend
+      args:
+        EXTRAS: ${EXTRAS:-}
+    image: mai-voice-backend:local
+    env_file: *env-file
+    ports:
+      - "7860:7860"
+    volumes: *model-volumes
+    stop_grace_period: 20s
+
+  # One-shot model cache warm-up: docker compose --profile tools run --rm models
+  models:
+    image: mai-voice-backend:local
+    profiles: ["tools"]
+    env_file: *env-file
+    command: ["python", "-m", "mai_voice.tools.fetch_models"]
+    volumes: *model-volumes

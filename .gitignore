@@ -1,0 +1,39 @@
+# macOS
+.DS_Store
+
+# Python / uv
+__pycache__/
+*.py[cod]
+.venv/
+.env
+.env.*
+!.env.example
+.pytest_cache/
+.ruff_cache/
+*.egg-info/
+
+# Docker
+docker-compose.override.yml
+
+# Xcode
+xcuserdata/
+*.xcuserstate
+DerivedData/
+*.xccheckout
+*.xcscmblueprint
+*.moved-aside
+
+# Gradle / Android
+.gradle/
+build/
+captures/
+local.properties
+*.apk
+*.aab
+.idea/
+*.iml
+
+# Logs / temp
+*.log
+tmp/
+.cache/

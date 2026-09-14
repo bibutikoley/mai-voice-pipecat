@@ -1,0 +1,45 @@
+[project]
+name = "mai-voice"
+version = "0.1.0"
+description = "mai-voice Pipecat server: SmallWebRTC voice pipeline with swappable local/cloud providers"
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    "pipecat-ai[runner,webrtc,moonshine,kokoro]>=1.10.0,<2",
+    "python-dotenv>=1.1.0",
+    "soundfile>=0.13.1",
+    "numpy>=2.0",
+    "qwen-asr>=0.0.6",
+    "qwen-tts>=0.1.1",
+]
+
+[project.optional-dependencies]
+whisper = ["pipecat-ai[whisper]>=1.10.0,<2"]
+piper = ["pipecat-ai[piper]>=1.10.0,<2"]
+cloud = ["pipecat-ai[deepgram,cartesia]>=1.10.0,<2"]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.4.0",
+    "pytest-asyncio>=1.0.0",
+    "ruff>=0.12.0",
+]
+
+[tool.uv]
+package = false
+# qwen-asr pins transformers==4.57.6 and qwen-tts pins transformers==4.57.3.
+# Both are installed together; this resolves to a single version. Validate the
+# Qwen adapters after install (tests/test_qwen_smoke.py, marked slow).
+override-dependencies = ["transformers==4.57.6"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+pythonpath = ["."]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM"]
+ignore = ["E501"]
